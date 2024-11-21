@@ -1,28 +1,51 @@
 pipeline {
     agent any
     stages {
-        stage('Info') {
+        stage('Cleanup') {
             steps {
-                echo "Job: ${env.JOB_NAME} is building on branch ${env.GIT_BRANCH} and build-id is ${env.BUILD_ID}"
-                sh 'sleep 5'
+                cleanWs()
             }
         }
-        stage('Build') {
+
+        stage('Clone Git Repo') {
             steps {
-                echo "this is build stage"
-                sh 'sleep 5'
+                checkout scm
             }
         }
-        stage('Test') {
+        stage('Clone from repository') {
             steps {
-                echo "this is test stage"
-                sh 'sleep 5'
+                git url: 'https://github.com/Cholai21/2244_ica2.git', branch: 'develop', credentialsId: 'GIT'
             }
         }
-        stage('Deploy') {
+
+        stage('Build and run docker image') {
             steps {
-                echo "this is deploy stage"
-                sh 'sleep 5'
+                sh 'sudo docker build -t pavala/static-website:latest .'
+                sh "sudo docker tag pavala/static-website:latest pavala/static-website:develop-${env.BUILD_ID}" 
+                sh 'sudo docker run -d -p 8081:80 pavala/static-website:latest'
+            } 
+        }
+
+
+        stage('Build and Push') {
+            steps {
+                echo 'Building..'
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-auth', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        sh '''
+                            sudo docker login -u ${USERNAME} -p ${PASSWORD}
+                            sudo docker push pavala/static-website:latest
+                        '''
+                        sh "sudo docker push pavala/static-website:develop-${env.BUILD_ID}"
+                    }
             }
         }
+
+        stage('testing') {
+            steps {
+                sh 'curl -I 15.156.65.109:8081'
+            }
+        }
+
+    
     }
+}
