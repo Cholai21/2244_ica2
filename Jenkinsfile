@@ -5,7 +5,7 @@ pipeline {
         DOCKER_IMAGE = 'pavala/static-website' // Docker Hub repo
         DOCKER_TAG = "develop-${env.BUILD_ID}" // Tag for the Docker image
         DOCKER_SERVER = '15.156.65.109' // Docker server IP
-        SSH_CREDENTIALS_ID = 'docker-server-ssh' // SSH credentials for Docker server
+        SSH_CREDENTIALS_ID = 'root@15.156.65.109' // SSH credentials for Docker server
         DOCKER_HUB_CREDENTIALS_ID = 'docker-hub-credentials' // Docker Hub credentials
     }
 
