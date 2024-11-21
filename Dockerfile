@@ -1,14 +1,7 @@
 FROM ubuntu:latest
-
-# Install Nginx
 RUN apt-get update && apt-get install -y nginx
-
-# Copy website files into Nginx default directory
-COPY . /var/www/html/
-
-# Expose port 80 to serve the website
-EXPOSE 80
-
-# Start Nginx in the foreground
+COPY index.html /var/www/html/
+COPY error /var/www/html/error
+COPY assets /var/www/html/assets
+COPY images /var/www/html/images
 CMD ["nginx", "-g", "daemon off;"]
-

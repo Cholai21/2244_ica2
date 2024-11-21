@@ -3,49 +3,51 @@ pipeline {
     stages {
         stage('Cleanup') {
             steps {
-                cleanWs()
+                cleanWs() // Cleans the workspace
             }
         }
 
-        stage('Clone Git Repo') {
+        stage('Checkout Code') {
             steps {
-                checkout scm
-            }
-        }
-        stage('Clone from repository') {
-            steps {
-                git url: 'https://github.com/Cholai21/2244_ica2.git', branch: 'develop', credentialsId: 'GIT'
+                checkout scm // Checks out the code from the repository
             }
         }
 
-        stage('Build and run docker image') {
+        stage('Build Image') {
             steps {
-                sh 'sudo docker build -t pavala/static-website:latest .'
-                sh "sudo docker tag pavala/static-website:latest pavala/static-website:develop-${env.BUILD_ID}" 
-                sh 'sudo docker run -d -p 8082:80 pavala/static-website:latest'
-            } 
-        }
-
-
-        stage('Build and Push') {
-            steps {
-                echo 'Building..'
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-auth', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                        sh '''
-                            sudo docker login -u ${USERNAME} -p ${PASSWORD}
-                            sudo docker push pavala/static-website:latest
-                        '''
-                        sh "sudo docker push pavala/static-website:develop-${env.BUILD_ID}"
-                    }
+                // Builds the Docker image
+                sh 'docker build -t static-website-nginx:develop-${BUILD_ID} .'
             }
         }
 
-        stage('testing') {
+        stage('Run Container') {
             steps {
-                sh 'curl -I 15.156.65.109:8082'
+                // Stops and removes existing container, then runs a new one
+                sh 'docker stop develop-container || true && docker rm develop-container || true'
+                sh 'docker run --name develop-container -d -p 8081:80 static-website-nginx:develop-${BUILD_ID}'
             }
         }
 
-    
+        stage('Test Website') {
+            steps {
+                // Tests if the website is accessible
+                sh 'curl -I http://15.156.65.109:8081'
+            }
+        }
+
+        stage('Push Image') {
+    steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-auth', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+            sh '''
+                docker login -u $USERNAME -p $PASSWORD
+                docker tag static-website-nginx:develop-${BUILD_ID} $USERNAME/static-website-nginx:latest
+                docker tag static-website-nginx:develop-${BUILD_ID} $USERNAME/static-website-nginx:develop-${BUILD_ID}
+                docker push $USERNAME/static-website-nginx:latest
+                docker push $USERNAME/static-website-nginx:develop-${BUILD_ID}
+            '''
+        }
+    }
+}
+
     }
 }
