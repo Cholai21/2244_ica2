@@ -22,7 +22,7 @@ pipeline {
             steps {
                 sh 'sudo docker build -t pavala/static-website:latest .'
                 sh "sudo docker tag pavala/static-website:latest pavala/static-website:develop-${env.BUILD_ID}" 
-                sh 'sudo docker run -d -p 8081:80 pavala/static-website:latest'
+                sh 'sudo docker run -d -p 8082:80 pavala/static-website:latest'
             } 
         }
 
@@ -42,7 +42,7 @@ pipeline {
 
         stage('testing') {
             steps {
-                sh 'curl -I 15.156.65.109:8081'
+                sh 'curl -I 15.156.65.109:8082'
             }
         }
 
